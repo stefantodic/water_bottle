@@ -14,14 +14,20 @@ class WaterBottle extends StatefulWidget {
   /// Color of the bottle cap
   final Color capColor;
 
-  /// Create a regular bottle, you can customize it's part with
+  /// Should the water animate (waves/bubbles)?
+  final bool animate;
+
+  /// Create a regular bottle, you can customize its parts with
   /// [waterColor], [bottleColor], [capColor].
-  WaterBottle(
-      {Key? key,
-      this.waterColor = Colors.blue,
-      this.bottleColor = Colors.blue,
-      this.capColor = Colors.blueGrey})
-      : super(key: key);
+  /// By default [animate] is true.
+  WaterBottle({
+    Key? key,
+    this.waterColor = Colors.blue,
+    this.bottleColor = Colors.blue,
+    this.capColor = Colors.blueGrey,
+    this.animate = true,
+  }) : super(key: key);
+
   @override
   WaterBottleState createState() => WaterBottleState();
 }
@@ -32,9 +38,13 @@ class WaterBottleState extends State<WaterBottle>
   void initState() {
     super.initState();
     initWater(widget.waterColor, this);
-    waves.first.animation.addListener(() {
-      setState(() {});
-    });
+
+    if (widget.animate) {
+      // Only attach listener if animation is enabled
+      waves.first.animation.addListener(() {
+        setState(() {});
+      });
+    }
   }
 
   @override
@@ -54,7 +64,7 @@ class WaterBottleState extends State<WaterBottle>
           child: CustomPaint(
             painter: WaterBottlePainter(
               waves: waves,
-              bubbles: bubbles,
+              bubbles: widget.animate ? bubbles : const <Bubble>[],
               waterLevel: waterLevel,
               bottleColor: widget.bottleColor,
               capColor: widget.capColor,
@@ -74,22 +84,22 @@ class WaterBottlePainter extends CustomPainter {
   final List<Bubble> bubbles;
 
   /// Water level, 0 = no water, 1 = full water
-  final waterLevel;
+  final double waterLevel;
 
   /// Bottle color
-  final bottleColor;
+  final Color bottleColor;
 
   /// Bottle cap color
-  final capColor;
+  final Color capColor;
 
-  WaterBottlePainter(
-      {Listenable? repaint,
-      required this.waves,
-      required this.bubbles,
-      required this.waterLevel,
-      required this.bottleColor,
-      required this.capColor})
-      : super(repaint: repaint);
+  WaterBottlePainter({
+    Listenable? repaint,
+    required this.waves,
+    required this.bubbles,
+    required this.waterLevel,
+    required this.bottleColor,
+    required this.capColor,
+  }) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -157,9 +167,9 @@ class WaterBottlePainter extends CustomPainter {
     final neckRingInner = size.width * 0.1;
     final neckRingInnerR = size.width - neckRingInner;
     canvas.drawRect(
-        Rect.fromLTRB(
-            neckRingInner + 5, 0, neckRingInnerR - 5, size.height - 5),
-        paint);
+      Rect.fromLTRB(neckRingInner + 5, 0, neckRingInnerR - 5, size.height - 5),
+      paint,
+    );
   }
 
   void paintWaves(Canvas canvas, Size size, Paint paint) {
@@ -172,20 +182,18 @@ class WaterBottlePainter extends CustomPainter {
       final scaleX = desiredW / wave.svgData.getBounds().width;
       final scaleY = desiredH / wave.svgData.getBounds().height;
       final translateX = -wave.offset * translateRange;
-      final waterRange = size.height +
-          desiredH; // 0 = no water = size.height; 1 = full water = -size.width
+      final waterRange = size.height + desiredH;
       final translateY = (1.0 - waterLevel) * waterRange - desiredH;
       transform.translate(translateX, translateY);
       transform.scale(scaleX, scaleY);
       canvas.drawPath(wave.svgData.transform(transform.storage), paint);
-      if (waves.indexOf(wave) != waves.length - 1) {
-        continue;
-      }
+      if (waves.indexOf(wave) != waves.length - 1) continue;
       final gap = size.height - desiredH - translateY;
       if (gap > 0) {
         canvas.drawRect(
-            Rect.fromLTRB(0, desiredH + translateY, size.width, size.height),
-            paint);
+          Rect.fromLTRB(0, desiredH + translateY, size.width, size.height),
+          paint,
+        );
       }
     }
   }
@@ -194,7 +202,9 @@ class WaterBottlePainter extends CustomPainter {
     for (var bubble in bubbles) {
       paint.color = bubble.color;
       final offset = Offset(
-          bubble.x * size.width, (bubble.y + 1.0 - waterLevel) * size.height);
+        bubble.x * size.width,
+        (bubble.y + 1.0 - waterLevel) * size.height,
+      );
       final radius = bubble.size * math.min(size.width, size.height);
       canvas.drawCircle(offset, radius, paint);
     }
@@ -205,8 +215,9 @@ class WaterBottlePainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTRB(0, 0, size.width * 0.5, size.height), paint);
     paint.color = Colors.white.withAlpha(80);
     canvas.drawRect(
-        Rect.fromLTRB(size.width * 0.9, 0, size.width * 0.95, size.height),
-        paint);
+      Rect.fromLTRB(size.width * 0.9, 0, size.width * 0.95, size.height),
+      paint,
+    );
     final rect = Offset.zero & size;
     final gradient = LinearGradient(
       begin: Alignment.topLeft,
