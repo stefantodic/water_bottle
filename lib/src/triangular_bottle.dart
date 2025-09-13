@@ -14,12 +14,18 @@ class TriangularBottle extends StatefulWidget {
 
   /// Color of the bottle cap
   final Color capColor;
-  TriangularBottle(
-      {Key? key,
-      this.waterColor = Colors.blue,
-      this.bottleColor = Colors.blue,
-      this.capColor = Colors.blueGrey})
-      : super(key: key);
+
+  /// Whether water should animate (waves/bubbles)
+  final bool animate;
+
+  TriangularBottle({
+    Key? key,
+    this.waterColor = Colors.blue,
+    this.bottleColor = Colors.blue,
+    this.capColor = Colors.blueGrey,
+    this.animate = true,
+  }) : super(key: key);
+
   @override
   TriangularBottleState createState() => TriangularBottleState();
 }
@@ -30,9 +36,12 @@ class TriangularBottleState extends State<TriangularBottle>
   void initState() {
     super.initState();
     initWater(widget.waterColor, this);
-    waves.first.animation.addListener(() {
-      setState(() {});
-    });
+
+    if (widget.animate && waves.isNotEmpty) {
+      waves.first.animation.addListener(() {
+        setState(() {});
+      });
+    }
   }
 
   @override
@@ -51,8 +60,8 @@ class TriangularBottleState extends State<TriangularBottle>
           aspectRatio: 1 / 1,
           child: CustomPaint(
             painter: TriangularBottleStatePainter(
-              waves: waves,
-              bubbles: bubbles,
+              waves: widget.animate ? waves : [],
+              bubbles: widget.animate ? bubbles : [],
               waterLevel: waterLevel,
               bottleColor: widget.bottleColor,
               capColor: widget.capColor,
@@ -164,7 +173,7 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
     final r = math.min(size.width, size.height);
     final rect = Offset(0, size.height - r) & size;
     final gradient = RadialGradient(
-      center: Alignment.center, // near the top right
+      center: Alignment.center,
       colors: [
         Colors.white.withAlpha(120),
         Colors.white.withAlpha(0),
@@ -172,7 +181,6 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
     ).createShader(rect);
     paint.color = Colors.white;
     paint.shader = gradient;
-    // gradient
     canvas.drawRect(
         Rect.fromLTRB(5, size.height - r + 3, size.width - 5, size.height - 5),
         paint);
