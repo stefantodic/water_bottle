@@ -15,15 +15,15 @@ class TriangularBottle extends StatefulWidget {
   /// Color of the bottle cap
   final Color capColor;
 
-  /// Whether water should animate (waves/bubbles)
-  final bool animate;
+  /// Should idle waves/bubbles animate?
+  final bool waveAnimation;
 
   TriangularBottle({
     Key? key,
     this.waterColor = Colors.blue,
     this.bottleColor = Colors.blue,
     this.capColor = Colors.blueGrey,
-    this.animate = true,
+    this.waveAnimation = true,
   }) : super(key: key);
 
   @override
@@ -37,7 +37,7 @@ class TriangularBottleState extends State<TriangularBottle>
     super.initState();
     initWater(widget.waterColor, this);
 
-    if (widget.animate && waves.isNotEmpty) {
+    if (widget.waveAnimation) {
       waves.first.animation.addListener(() {
         setState(() {});
       });
@@ -60,8 +60,8 @@ class TriangularBottleState extends State<TriangularBottle>
           aspectRatio: 1 / 1,
           child: CustomPaint(
             painter: TriangularBottleStatePainter(
-              waves: widget.animate ? waves : [],
-              bubbles: widget.animate ? bubbles : [],
+              waves: waves,
+              bubbles: widget.waveAnimation ? bubbles : const <Bubble>[],
               waterLevel: waterLevel,
               bottleColor: widget.bottleColor,
               capColor: widget.capColor,
@@ -75,6 +75,7 @@ class TriangularBottleState extends State<TriangularBottle>
 
 class TriangularBottleStatePainter extends WaterBottlePainter {
   static const BREAK_POINT = 1.2;
+
   TriangularBottleStatePainter({
     Listenable? repaint,
     required List<WaveLayer> waves,
@@ -104,10 +105,12 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
     final bodyBottom = size.height;
     final bodyL = 0.0;
     final bodyR = size.width;
-    final path = Path();
-    path.moveTo(neckRingOuter, neckTop);
-    path.lineTo(neckRingInner, neckTop);
-    path.lineTo(neckRingInner, neckBottom);
+
+    final path = Path()
+      ..moveTo(neckRingOuter, neckTop)
+      ..lineTo(neckRingInner, neckTop)
+      ..lineTo(neckRingInner, neckBottom);
+
     if (SMOOTH_CORNER) {
       final bodyLAX = (neckRingInner - bodyL) * 0.1 + bodyL;
       final bodyLAY = (bodyBottom - neckBottom) * 0.9 + neckBottom;
@@ -117,17 +120,23 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
       final bodyRAY = bodyLAY;
       final bodyRBX = size.width - bodyLBX;
       final bodyRBY = bodyLBY;
-      path.lineTo(bodyLAX, bodyLAY);
-      path.conicTo(bodyL, bodyBottom, bodyLBX, bodyLBY, 1);
-      path.lineTo(bodyRBX, bodyRBY);
-      path.conicTo(bodyR, bodyBottom, bodyRAX, bodyRAY, 1);
+
+      path
+        ..lineTo(bodyLAX, bodyLAY)
+        ..conicTo(bodyL, bodyBottom, bodyLBX, bodyLBY, 1)
+        ..lineTo(bodyRBX, bodyRBY)
+        ..conicTo(bodyR, bodyBottom, bodyRAX, bodyRAY, 1);
     } else {
-      path.lineTo(bodyL, bodyBottom);
-      path.lineTo(bodyR, bodyBottom);
+      path
+        ..lineTo(bodyL, bodyBottom)
+        ..lineTo(bodyR, bodyBottom);
     }
-    path.lineTo(neckRingInnerR, neckBottom);
-    path.lineTo(neckRingInnerR, neckTop);
-    path.lineTo(neckRingOuterR, neckTop);
+
+    path
+      ..lineTo(neckRingInnerR, neckBottom)
+      ..lineTo(neckRingInnerR, neckTop)
+      ..lineTo(neckRingOuterR, neckTop);
+
     canvas.drawPath(path, paint);
   }
 
@@ -142,9 +151,11 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
     final bodyBottom = size.height - 5;
     final bodyL = 5.0;
     final bodyR = size.width - 5;
-    final path = Path();
-    path.moveTo(neckRingInner, neckTop);
-    path.lineTo(neckRingInner, neckBottom);
+
+    final path = Path()
+      ..moveTo(neckRingInner, neckTop)
+      ..lineTo(neckRingInner, neckBottom);
+
     if (SMOOTH_CORNER) {
       final bodyLAX = (neckRingInner - bodyL) * 0.1 + bodyL;
       final bodyLAY = (bodyBottom - neckBottom) * 0.9 + neckBottom;
@@ -154,17 +165,23 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
       final bodyRAY = bodyLAY;
       final bodyRBX = size.width - bodyLBX;
       final bodyRBY = bodyLBY;
-      path.lineTo(bodyLAX, bodyLAY);
-      path.conicTo(bodyL, bodyBottom, bodyLBX, bodyLBY, 1);
-      path.lineTo(bodyRBX, bodyRBY);
-      path.conicTo(bodyR, bodyBottom, bodyRAX, bodyRAY, 1);
+
+      path
+        ..lineTo(bodyLAX, bodyLAY)
+        ..conicTo(bodyL, bodyBottom, bodyLBX, bodyLBY, 1)
+        ..lineTo(bodyRBX, bodyRBY)
+        ..conicTo(bodyR, bodyBottom, bodyRAX, bodyRAY, 1);
     } else {
-      path.lineTo(bodyL, bodyBottom);
-      path.lineTo(bodyR, bodyBottom);
+      path
+        ..lineTo(bodyL, bodyBottom)
+        ..lineTo(bodyR, bodyBottom);
     }
-    path.lineTo(neckRingInnerR, neckBottom);
-    path.lineTo(neckRingInnerR, neckTop);
-    path.close();
+
+    path
+      ..lineTo(neckRingInnerR, neckBottom)
+      ..lineTo(neckRingInnerR, neckTop)
+      ..close();
+
     canvas.drawPath(path, paint);
   }
 
@@ -179,18 +196,20 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
         Colors.white.withAlpha(0),
       ],
     ).createShader(rect);
+
     paint.color = Colors.white;
     paint.shader = gradient;
+
     canvas.drawRect(
-        Rect.fromLTRB(5, size.height - r + 3, size.width - 5, size.height - 5),
-        paint);
+      Rect.fromLTRB(5, size.height - r + 3, size.width - 5, size.height - 5),
+      paint,
+    );
   }
 
   @override
   void paintCap(Canvas canvas, Size size, Paint paint) {
-    if (size.height / size.width < BREAK_POINT) {
-      return;
-    }
+    if (size.height / size.width < BREAK_POINT) return;
+
     final capTop = 0.0;
     final capBottom = size.width * 0.2;
     final capMid = (capBottom - capTop) / 2;
@@ -198,14 +217,16 @@ class TriangularBottleStatePainter extends WaterBottlePainter {
     final capR = size.width - capL;
     final neckRingInner = size.width * 0.35 + 5;
     final neckRingInnerR = size.width - neckRingInner;
-    final path = Path();
-    path.moveTo(capL, capTop);
-    path.lineTo(neckRingInner, capMid);
-    path.lineTo(neckRingInner, capBottom);
-    path.lineTo(neckRingInnerR, capBottom);
-    path.lineTo(neckRingInnerR, capMid);
-    path.lineTo(capR, capTop);
-    path.close();
+
+    final path = Path()
+      ..moveTo(capL, capTop)
+      ..lineTo(neckRingInner, capMid)
+      ..lineTo(neckRingInner, capBottom)
+      ..lineTo(neckRingInnerR, capBottom)
+      ..lineTo(neckRingInnerR, capMid)
+      ..lineTo(capR, capTop)
+      ..close();
+
     canvas.drawPath(path, paint);
   }
 }
