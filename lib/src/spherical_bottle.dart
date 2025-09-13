@@ -15,16 +15,21 @@ class SphericalBottle extends StatefulWidget {
   /// Color of the bottle cap
   final Color capColor;
 
+  /// Whether water should animate (waves/bubbles)
+  final bool animate;
+
   /// Create a spherical bottle, you can customize it's part with
   /// [waterColor], [bottleColor], [capColor].
   /// Note that if the width/height ratio get small enough,
   /// the bottle will automatically reduce it's neck
-  SphericalBottle(
-      {Key? key,
-      this.waterColor = Colors.blue,
-      this.bottleColor = Colors.blue,
-      this.capColor = Colors.blueGrey})
-      : super(key: key);
+  SphericalBottle({
+    Key? key,
+    this.waterColor = Colors.blue,
+    this.bottleColor = Colors.blue,
+    this.capColor = Colors.blueGrey,
+    this.animate = true,
+  }) : super(key: key);
+
   @override
   SphericalBottleState createState() => SphericalBottleState();
 }
@@ -35,9 +40,12 @@ class SphericalBottleState extends State<SphericalBottle>
   void initState() {
     super.initState();
     initWater(widget.waterColor, this);
-    waves.first.animation.addListener(() {
-      setState(() {});
-    });
+
+    if (widget.animate && waves.isNotEmpty) {
+      waves.first.animation.addListener(() {
+        setState(() {});
+      });
+    }
   }
 
   @override
@@ -56,8 +64,8 @@ class SphericalBottleState extends State<SphericalBottle>
           aspectRatio: 1 / 1,
           child: CustomPaint(
             painter: SphericalBottlePainter(
-              waves: waves,
-              bubbles: bubbles,
+              waves: widget.animate ? waves : [],
+              bubbles: widget.animate ? bubbles : [],
               waterLevel: waterLevel,
               bottleColor: widget.bottleColor,
               capColor: widget.capColor,
@@ -70,7 +78,6 @@ class SphericalBottleState extends State<SphericalBottle>
 }
 
 class SphericalBottlePainter extends WaterBottlePainter {
-  // At which point should we cut off the neck of the bottle
   static const BREAK_POINT = 1.2;
   SphericalBottlePainter({
     Listenable? repaint,
@@ -136,7 +143,7 @@ class SphericalBottlePainter extends WaterBottlePainter {
     final r = math.min(size.width, size.height);
     final rect = Offset(0, size.height - r) & size;
     final gradient = RadialGradient(
-      center: Alignment.center, // near the top right
+      center: Alignment.center,
       colors: [
         Colors.white.withAlpha(120),
         Colors.white.withAlpha(0),
@@ -144,11 +151,10 @@ class SphericalBottlePainter extends WaterBottlePainter {
     ).createShader(rect);
     paint.color = Colors.white;
     paint.shader = gradient;
-    // gradient
     canvas.drawRect(
         Rect.fromLTRB(5, size.height - r + 3, size.width - 5, size.height - 5),
         paint);
-    // highlight
+
     paint.shader = null;
     paint.color = Colors.white.withAlpha(30);
     paint.style = PaintingStyle.stroke;
