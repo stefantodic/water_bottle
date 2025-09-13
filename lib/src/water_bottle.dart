@@ -14,18 +14,15 @@ class WaterBottle extends StatefulWidget {
   /// Color of the bottle cap
   final Color capColor;
 
-  /// Should the water animate (waves/bubbles)?
-  final bool animate;
+  /// Should idle waves/bubbles animate?
+  final bool waveAnimation;
 
-  /// Create a regular bottle, you can customize its parts with
-  /// [waterColor], [bottleColor], [capColor].
-  /// By default [animate] is true.
   WaterBottle({
     Key? key,
     this.waterColor = Colors.blue,
     this.bottleColor = Colors.blue,
     this.capColor = Colors.blueGrey,
-    this.animate = true,
+    this.waveAnimation = true,
   }) : super(key: key);
 
   @override
@@ -39,8 +36,7 @@ class WaterBottleState extends State<WaterBottle>
     super.initState();
     initWater(widget.waterColor, this);
 
-    if (widget.animate) {
-      // Only attach listener if animation is enabled
+    if (widget.waveAnimation) {
       waves.first.animation.addListener(() {
         setState(() {});
       });
@@ -64,7 +60,7 @@ class WaterBottleState extends State<WaterBottle>
           child: CustomPaint(
             painter: WaterBottlePainter(
               waves: waves,
-              bubbles: widget.animate ? bubbles : const <Bubble>[],
+              bubbles: widget.waveAnimation ? bubbles : const <Bubble>[],
               waterLevel: waterLevel,
               bottleColor: widget.bottleColor,
               capColor: widget.capColor,
@@ -77,19 +73,10 @@ class WaterBottleState extends State<WaterBottle>
 }
 
 class WaterBottlePainter extends CustomPainter {
-  /// Holds all wave object instances
   final List<WaveLayer> waves;
-
-  /// Holds all bubble object instances
   final List<Bubble> bubbles;
-
-  /// Water level, 0 = no water, 1 = full water
   final double waterLevel;
-
-  /// Bottle color
   final Color bottleColor;
-
-  /// Bottle cap color
   final Color capColor;
 
   WaterBottlePainter({
@@ -104,44 +91,44 @@ class WaterBottlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     {
-      final paint = Paint();
-      paint.color = bottleColor;
-      paint.style = PaintingStyle.stroke;
-      paint.strokeWidth = 3;
+      final paint = Paint()
+        ..color = bottleColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3;
       paintEmptyBottle(canvas, size, paint);
     }
     {
-      final paint = Paint();
-      paint.color = Colors.white;
-      paint.style = PaintingStyle.fill;
+      final paint = Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.fill;
       final rect = Rect.fromLTRB(0, 0, size.width, size.height);
       canvas.saveLayer(rect, paint);
       paintBottleMask(canvas, size, paint);
     }
     {
-      final paint = Paint();
-      paint.blendMode = BlendMode.srcIn;
-      paint.style = PaintingStyle.fill;
+      final paint = Paint()
+        ..blendMode = BlendMode.srcIn
+        ..style = PaintingStyle.fill;
       paintWaves(canvas, size, paint);
     }
     {
-      final paint = Paint();
-      paint.blendMode = BlendMode.srcATop;
-      paint.style = PaintingStyle.fill;
+      final paint = Paint()
+        ..blendMode = BlendMode.srcATop
+        ..style = PaintingStyle.fill;
       paintBubbles(canvas, size, paint);
     }
     {
-      final paint = Paint();
-      paint.blendMode = BlendMode.srcATop;
-      paint.style = PaintingStyle.fill;
+      final paint = Paint()
+        ..blendMode = BlendMode.srcATop
+        ..style = PaintingStyle.fill;
       paintGlossyOverlay(canvas, size, paint);
     }
     canvas.restore();
     {
-      final paint = Paint();
-      paint.blendMode = BlendMode.srcATop;
-      paint.style = PaintingStyle.fill;
-      paint.color = capColor;
+      final paint = Paint()
+        ..blendMode = BlendMode.srcATop
+        ..style = PaintingStyle.fill
+        ..color = capColor;
       paintCap(canvas, size, paint);
     }
   }
@@ -149,17 +136,18 @@ class WaterBottlePainter extends CustomPainter {
   void paintEmptyBottle(Canvas canvas, Size size, Paint paint) {
     final neckTop = size.width * 0.1;
     final neckBottom = size.height;
-    final neckRingOuter = 0.0;
-    final neckRingOuterR = size.width - neckRingOuter;
+    final neckRingOuterR = size.width;
     final neckRingInner = size.width * 0.1;
     final neckRingInnerR = size.width - neckRingInner;
-    final path = Path();
-    path.moveTo(neckRingOuter, neckTop);
-    path.lineTo(neckRingInner, neckTop);
-    path.lineTo(neckRingInner, neckBottom);
-    path.lineTo(neckRingInnerR, neckBottom);
-    path.lineTo(neckRingInnerR, neckTop);
-    path.lineTo(neckRingOuterR, neckTop);
+
+    final path = Path()
+      ..moveTo(0, neckTop)
+      ..lineTo(neckRingInner, neckTop)
+      ..lineTo(neckRingInner, neckBottom)
+      ..lineTo(neckRingInnerR, neckBottom)
+      ..lineTo(neckRingInnerR, neckTop)
+      ..lineTo(neckRingOuterR, neckTop);
+
     canvas.drawPath(path, paint);
   }
 
@@ -240,14 +228,16 @@ class WaterBottlePainter extends CustomPainter {
     final capR = size.width - capL;
     final neckRingInner = size.width * 0.1 + 5;
     final neckRingInnerR = size.width - neckRingInner;
-    final path = Path();
-    path.moveTo(capL, capTop);
-    path.lineTo(neckRingInner, capMid);
-    path.lineTo(neckRingInner, capBottom);
-    path.lineTo(neckRingInnerR, capBottom);
-    path.lineTo(neckRingInnerR, capMid);
-    path.lineTo(capR, capTop);
-    path.close();
+
+    final path = Path()
+      ..moveTo(capL, capTop)
+      ..lineTo(neckRingInner, capMid)
+      ..lineTo(neckRingInner, capBottom)
+      ..lineTo(neckRingInnerR, capBottom)
+      ..lineTo(neckRingInnerR, capMid)
+      ..lineTo(capR, capTop)
+      ..close();
+
     canvas.drawPath(path, paint);
   }
 
