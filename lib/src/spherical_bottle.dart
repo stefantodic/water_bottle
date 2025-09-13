@@ -15,19 +15,15 @@ class SphericalBottle extends StatefulWidget {
   /// Color of the bottle cap
   final Color capColor;
 
-  /// Whether water should animate (waves/bubbles)
-  final bool animate;
+  /// Should idle waves/bubbles animate?
+  final bool waveAnimation;
 
-  /// Create a spherical bottle, you can customize it's part with
-  /// [waterColor], [bottleColor], [capColor].
-  /// Note that if the width/height ratio get small enough,
-  /// the bottle will automatically reduce it's neck
   SphericalBottle({
     Key? key,
     this.waterColor = Colors.blue,
     this.bottleColor = Colors.blue,
     this.capColor = Colors.blueGrey,
-    this.animate = true,
+    this.waveAnimation = true,
   }) : super(key: key);
 
   @override
@@ -41,7 +37,7 @@ class SphericalBottleState extends State<SphericalBottle>
     super.initState();
     initWater(widget.waterColor, this);
 
-    if (widget.animate && waves.isNotEmpty) {
+    if (widget.waveAnimation) {
       waves.first.animation.addListener(() {
         setState(() {});
       });
@@ -64,8 +60,8 @@ class SphericalBottleState extends State<SphericalBottle>
           aspectRatio: 1 / 1,
           child: CustomPaint(
             painter: SphericalBottlePainter(
-              waves: widget.animate ? waves : [],
-              bubbles: widget.animate ? bubbles : [],
+              waves: waves,
+              bubbles: widget.waveAnimation ? bubbles : const <Bubble>[],
               waterLevel: waterLevel,
               bottleColor: widget.bottleColor,
               capColor: widget.capColor,
@@ -79,6 +75,7 @@ class SphericalBottleState extends State<SphericalBottle>
 
 class SphericalBottlePainter extends WaterBottlePainter {
   static const BREAK_POINT = 1.2;
+
   SphericalBottlePainter({
     Listenable? repaint,
     required List<WaveLayer> waves,
@@ -100,7 +97,10 @@ class SphericalBottlePainter extends WaterBottlePainter {
     final r = math.min(size.width, size.height);
     if (size.height / size.width < BREAK_POINT) {
       canvas.drawCircle(
-          Offset(size.width / 2, size.height - r / 2), r / 2, paint);
+        Offset(size.width / 2, size.height - r / 2),
+        r / 2,
+        paint,
+      );
       return;
     }
     final neckTop = size.width * 0.1;
@@ -109,33 +109,47 @@ class SphericalBottlePainter extends WaterBottlePainter {
     final neckRingOuterR = size.width - neckRingOuter;
     final neckRingInner = size.width * 0.35;
     final neckRingInnerR = size.width - neckRingInner;
-    final path = Path();
-    path.moveTo(neckRingOuter, neckTop);
-    path.lineTo(neckRingInner, neckTop);
-    path.lineTo(neckRingInner, neckBottom);
-    path.moveTo(neckRingInnerR, neckBottom);
-    path.lineTo(neckRingInnerR, neckTop);
-    path.lineTo(neckRingOuterR, neckTop);
+
+    final path = Path()
+      ..moveTo(neckRingOuter, neckTop)
+      ..lineTo(neckRingInner, neckTop)
+      ..lineTo(neckRingInner, neckBottom)
+      ..moveTo(neckRingInnerR, neckBottom)
+      ..lineTo(neckRingInnerR, neckTop)
+      ..lineTo(neckRingOuterR, neckTop);
+
     canvas.drawPath(path, paint);
-    canvas.drawArc(Rect.fromLTRB(0, size.height - r, size.width, size.height),
-        math.pi * 1.59, math.pi * 1.82, false, paint);
+    canvas.drawArc(
+      Rect.fromLTRB(0, size.height - r, size.width, size.height),
+      math.pi * 1.59,
+      math.pi * 1.82,
+      false,
+      paint,
+    );
   }
 
   @override
   void paintBottleMask(Canvas canvas, Size size, Paint paint) {
     final r = math.min(size.width, size.height);
     canvas.drawCircle(
-        Offset(size.width / 2, size.height - r / 2), r / 2 - 5, paint);
-    if (size.height / size.width < BREAK_POINT) {
-      return;
-    }
+      Offset(size.width / 2, size.height - r / 2),
+      r / 2 - 5,
+      paint,
+    );
+    if (size.height / size.width < BREAK_POINT) return;
+
     final neckTop = size.width * 0.1;
     final neckRingInner = size.width * 0.35;
     final neckRingInnerR = size.width - neckRingInner;
     canvas.drawRect(
-        Rect.fromLTRB(neckRingInner + 5, neckTop, neckRingInnerR - 5,
-            size.height - r / 2),
-        paint);
+      Rect.fromLTRB(
+        neckRingInner + 5,
+        neckTop,
+        neckRingInnerR - 5,
+        size.height - r / 2,
+      ),
+      paint,
+    );
   }
 
   @override
@@ -149,12 +163,16 @@ class SphericalBottlePainter extends WaterBottlePainter {
         Colors.white.withAlpha(0),
       ],
     ).createShader(rect);
+
     paint.color = Colors.white;
     paint.shader = gradient;
-    canvas.drawRect(
-        Rect.fromLTRB(5, size.height - r + 3, size.width - 5, size.height - 5),
-        paint);
 
+    canvas.drawRect(
+      Rect.fromLTRB(5, size.height - r + 3, size.width - 5, size.height - 5),
+      paint,
+    );
+
+    // highlight
     paint.shader = null;
     paint.color = Colors.white.withAlpha(30);
     paint.style = PaintingStyle.stroke;
@@ -162,27 +180,29 @@ class SphericalBottlePainter extends WaterBottlePainter {
     paint.strokeWidth = r * HIGHLIGHT_WIDTH;
     const HIGHLIGHT_OFFSET = 0.1;
     final delta = r * HIGHLIGHT_OFFSET;
+
     canvas.drawArc(
-        Rect.fromLTRB(delta, size.height - r + delta, size.width - delta,
-            size.height - delta),
-        math.pi * 0.8,
-        math.pi * 0.4,
-        false,
-        paint);
+      Rect.fromLTRB(delta, size.height - r + delta, size.width - delta,
+          size.height - delta),
+      math.pi * 0.8,
+      math.pi * 0.4,
+      false,
+      paint,
+    );
     canvas.drawArc(
-        Rect.fromLTRB(delta, size.height - r + delta, size.width - delta,
-            size.height - delta),
-        math.pi * 1.25,
-        math.pi * 0.1,
-        false,
-        paint);
+      Rect.fromLTRB(delta, size.height - r + delta, size.width - delta,
+          size.height - delta),
+      math.pi * 1.25,
+      math.pi * 0.1,
+      false,
+      paint,
+    );
   }
 
   @override
   void paintCap(Canvas canvas, Size size, Paint paint) {
-    if (size.height / size.width < BREAK_POINT) {
-      return;
-    }
+    if (size.height / size.width < BREAK_POINT) return;
+
     final capTop = 0.0;
     final capBottom = size.width * 0.2;
     final capMid = (capBottom - capTop) / 2;
@@ -190,14 +210,16 @@ class SphericalBottlePainter extends WaterBottlePainter {
     final capR = size.width - capL;
     final neckRingInner = size.width * 0.35 + 5;
     final neckRingInnerR = size.width - neckRingInner;
-    final path = Path();
-    path.moveTo(capL, capTop);
-    path.lineTo(neckRingInner, capMid);
-    path.lineTo(neckRingInner, capBottom);
-    path.lineTo(neckRingInnerR, capBottom);
-    path.lineTo(neckRingInnerR, capMid);
-    path.lineTo(capR, capTop);
-    path.close();
+
+    final path = Path()
+      ..moveTo(capL, capTop)
+      ..lineTo(neckRingInner, capMid)
+      ..lineTo(neckRingInner, capBottom)
+      ..lineTo(neckRingInnerR, capBottom)
+      ..lineTo(neckRingInnerR, capMid)
+      ..lineTo(capR, capTop)
+      ..close();
+
     canvas.drawPath(path, paint);
   }
 }
